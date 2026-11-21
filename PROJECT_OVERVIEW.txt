@@ -1,0 +1,61 @@
+ROUTEQUOTE - PROJECT OVERVIEW
+
+MY MAIN TECHNICAL DECISIONS
+I used an Angular standalone component for the main page because it keeps the
+page and its logic together in an easy-to-understand place. Angular reactive
+forms store and validate the trip fields. The form state and validation
+messages stay in one place instead of being checked separately in many places.
+
+When the user asks for a quote, I validate the trip first. The app then shows
+a pending state and calculates the result after 300 milliseconds. The timer
+makes the loading state visible and does not need a server. The quote service
+keeps pending, success, invalid, and idle states.
+
+I use RxJS and Subscription to handle the asynchronous quote request. A new
+request cancels the previous pending request. This prevents an older result
+from replacing a newer one. I also use a trip key made from all trip fields.
+The page compares that key with the calculated quote key and hides the result
+when the form changes.
+
+I use browser localStorage to save drafts. Before loading saved data, I check
+it and replace bad values with safe empty values. This helps prevent damaged
+data from breaking the form.
+
+For drop-off positions, I use native HTML drag and drop. This does not require
+another drag-and-drop package.
+
+SIGNIFICANT ISSUES AND HOW I HANDLED THEM
+I found that the distance data only listed one direction for a location pair,
+such as A-B, B-C, and D-E. It should not matter whether the trip goes from A
+to E or from E to A because the distance is the same. I sort the two location
+IDs before looking up the distance, so E-A becomes A-E.
+
+The trip should not visit the same location twice. I keep the pickup and
+drop-offs in the duplicate-location validation. I also remove duplicate or
+unknown locations when restoring a saved draft.
+
+The original quote service had its quote calculation commented out. Because of
+that, a valid quote could stay in the pending state. I restored the
+calculation and made it run 300 milliseconds after a valid request starts.
+The service cancels older pending work and sets invalid or success state.
+
+HOW I VERIFIED THE PROJECT
+I ran npm ci to install the project packages. I ran npm run build and confirmed
+that Angular compiled the project successfully. I ran git diff --check to check
+the final text and code edits for whitespace problems.
+
+I started the development server and checked the app at
+http://127.0.0.1:4200/. The server returned HTTP 200. I manually checked draft
+save, restore, and clear behavior. I also checked quote calculations manually
+and compared at least one example result with the app output.
+
+The project currently has no .spec.ts or .test.ts files. I ran npm test, but
+Angular reported that no tests were found. I did not claim that automated tests
+passed.
+
+AI TOOLS DISCLOSURE
+GitHub Copilot was used to help generate the initial Angular project template,
+finish some lines, and suggest fixes for syntax errors. I reviewed the quote
+calculation, draft behavior, distance rules, UI states, and final documentation
+before using it. I also tested the app and ran the ordinary Node.js and Angular
+build commands myself.

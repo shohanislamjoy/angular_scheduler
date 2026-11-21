@@ -1,76 +1,88 @@
-# ROUTEQUOTE
+# RouteQuote
 
-## SETUP
-1. Install Node.js and npm.
-2. Open a terminal in this project folder.
-3. Install the packages with:
-   npm ci
+RouteQuote is an Angular application for planning a multi-stop truck trip.
+Users can choose a pickup location, reorder and add drop-offs, select a truck,
+enter cargo details, calculate a quote, and save a draft in the browser.
 
-## RUN
-Start the development server with:
-   npm start
+## Features
 
-## Open:
-   http://localhost:4200/
+- Reactive trip form with validation
+- Up to three drop-off locations
+- Native drag-and-drop stop reordering
+- Route distance and truck quote calculation
+- Loading, success, invalid, and idle quote states
+- Draft saving, restoring, and clearing with `localStorage`
+- Responsive layout for desktop and mobile screens
 
-## Build a production version with:
-   npm run build
+## Requirements
 
+- Node.js
+- npm
 
+This project uses Angular 22.3.0 packages.
 
-### MY MAIN TECHNICAL DECISIONS
-I used an Angular standalone component for the main page because it keeps the
-screen and page logic together in an easy-to-understand place. The form fields
-are controlled by Angular reactive forms, so I can check the values in one
-place instead of checking them separately everywhere.
+## Setup
 
-When the user asks for a quote, I validate the trip first. Then I show a loading
-state and calculate the result after 300 milliseconds. The short timer just
-makes the app feel like it is waiting for a quote without needing a fake server.
+Open a terminal in the project folder and run:
 
-I use browser localStorage to save drafts. Before loading a draft, I clean the
-saved data and replace bad values with safe empty values. This helps prevent a
-damaged draft from breaking the form.
+```bash
+npm ci
+```
 
-For drop-off positions, I use the browser's native drag and drop feature. This
-means I did not need to install another drag-and-drop package.
+## Run locally
 
-I also create a trip key from all the trip fields. The page compares this key
-with the key used for the quote. If the user changes the trip, the old quote
-is hidden until a new quote is calculated.
+Start the Angular development server:
 
-I made quote generation wait for 300 milliseconds so the loading state is
-visible. If the user asks for another valid quote before the old one finishes,
-I cancel the old timer. This stops an older result from replacing the newest
-result. The service tracks pending, success, invalid, and idle states.
+```bash
+npm start
+```
 
-The app calculates everything locally, so I use one fixed 300 millisecond
-timer instead of variable server-style response times. There is no need to
-simulate delays from 300 to 1,200 milliseconds because there is no network
-request or server response in this project.
+Open http://localhost:4200/.
 
-### MY SIGNIFICANT ISSUES AND WHAT I DID
-I found the distance calculation a little different and on the file you
-mentioned that there is no return leg to the pickup location. So we cannot go
-to the same location twice. I checked that and kept it that way. The location
-pattern in the distance data was only written as A-B, B-C, and similar pairs.
-But if the pickup is E and the drop-off is A, we should still provide the
-service. I sorted the two location names, so E and A become A-E, and the same
-distance can be used.
+The development server reloads the app after source files change.
 
-I also found that the fake timer and quote calculation code was commented out
-at first. I restored it as a real asynchronous request with cancellation
-instead of keeping the quote calculation stuck or direct.
+## Build
 
-### HOW I VERIFIED THAT THE PROJECT WORKS
-I ran it properly and checked whether the draft save, restore, and clear
-functions work. I also matched a calculation example from the project and it
-matched the result from the app. I did some manual testing for the other parts
-too. I ran npm run build and it passed.
+Create a production build:
 
-### AI TOOLS DISCLOSURE
-GitHub Copilot was used to help finish some lines and suggest fixes for syntax
-errors. At the start, it also helped generate the Angular project template.
-For the final implementation, I independently reviewed the quote calculation,
-draft behavior, distance rules, and UI states. I tested the app manually and
-checked the build with ordinary Angular and Node.js commands.
+```bash
+npm run build
+```
+
+The build output is written to `dist/angular_scheduler`.
+
+## Tests
+
+Run the Angular test command:
+
+```bash
+npm test
+```
+
+The project currently has no `.spec.ts` or `.test.ts` files, so this command
+will report that no tests were found.
+
+## Manual testing
+
+1. Select a pickup and drop-off location.
+2. Select a truck category and enter a valid cargo weight.
+3. Choose a future pickup date and time.
+4. Add optional loading or unloading services if needed.
+5. Select **Get quote** and confirm the loading state appears.
+6. Confirm the quote matches the selected route and truck.
+7. Change the form while a quote is loading and confirm the old quote is not
+   shown as valid for the new trip.
+8. Save a draft, reload the page, and confirm the saved trip is restored.
+9. Clear the draft and confirm the form and quote reset.
+
+## Project structure
+
+- `src/app/app.component.ts` - page component and form behavior
+- `src/app/app.component.html` - page layout and form controls
+- `src/app/trip.ts` - trip types, validation, distance, and quote calculations
+- `src/app/quote.service.ts` - quote state and asynchronous request handling
+- `src/app/draft.service.ts` - browser draft save and restore logic
+- `src/styles.css` - application styles
+
+For technical decisions and the assignment answer details, see
+[PROJECT_OVERVIEW.txt](./PROJECT_OVERVIEW.txt).
