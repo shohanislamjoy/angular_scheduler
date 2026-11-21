@@ -1,0 +1,147 @@
+<header class="top">
+  <h1>RouteQuote</h1>
+</header>
+
+<main class="layout">
+  <form class="panel" [formGroup]="form" (ngSubmit)="requestQuote()">
+    <h2>Trip details</h2>
+
+    <div class="field">
+      <label for="pickup">Pickup location</label>
+      <select id="pickup" formControlName="pickup">
+        <option [ngValue]="null">Select pickup…</option>
+        @for (l of locations; track l.id) {
+          <option [ngValue]="l.id">{{ l.name }}</option>
+        }
+      </select>
+    </div>
+
+    <fieldset class="field">
+      <legend>Drop-offs (drag the ⠿ handle to reorder)</legend>
+      @for (c of dropoffs.controls; track c; let i = $index) {
+        <div class="row" (dragover)="$event.preventDefault()" (drop)="onDrop($event, i)">
+          <span
+            class="handle"
+            draggable="true"
+            title="Drag to reorder"
+            (dragstart)="onDragStart($event, i)"
+            (dragend)="onDragEnd()"
+          >⠿</span>
+          <span class="stop-no">{{ i + 1 }}</span>
+          <select [formControl]="c" [attr.aria-label]="'Drop-off ' + (i + 1)">
+            <option [ngValue]="null">Select drop-off…</option>
+            @for (l of locations; track l.id) {
+              <option [ngValue]="l.id">{{ l.name }}</option>
+            }
+          </select>
+          <button type="button" class="secondary" (click)="removeDropoff(i)" [disabled]="dropoffs.length <= 1">
+            Remove
+          </button>
+        </div>
+      }
+      <button type="button" class="secondary" (click)="addDropoff()" [disabled]="dropoffs.length >= maxDropoffs">
+        Add drop-off
+      </button>
+      @if (dropoffs.length >= maxDropoffs) {
+        <span class="hint">Maximum of {{ maxDropoffs }} drop-offs.</span>
+      }
+    </fieldset>
+
+    <div class="two-col">
+      <div class="field">
+        <label for="truck">Truck category</label>
+        <select id="truck" formControlName="truck">
+          <option [ngValue]="null">Select truck…</option>
+          @for (t of trucks; track t.id) {
+            <option [ngValue]="t.id">{{ t.label }} ({{ t.capacityTonnes }} t each)</option>
+          }
+        </select>
+      </div>
+      <div class="field">
+        <label for="count">Number of trucks (1–{{ maxTrucks }})</label>
+        <input id="count" type="number" min="1" [max]="maxTrucks" step="1" formControlName="truckCount" />
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div class="field">
+        <label for="weight">Total cargo weight (tonnes)</label>
+        <input id="weight" type="number" min="0" step="0.1" formControlName="weight" />
+      </div>
+      <div class="field">
+        <label for="time">Pickup date and time</label>
+        <input id="time" type="datetime-local" formControlName="pickupTime" />
+      </div>
+    </div>
+
+    <div class="checks">
+      <label><input type="checkbox" formControlName="loading" /> Loading assistance (BDT {{ loadingFee }} per truck)</label>
+      <label><input type="checkbox" formControlName="unloading" /> Unloading assistance (BDT {{ unloadingFee }} per truck)</label>
+    </div>
+
+    @if (problems().length > 0) {
+      <div class="problems" role="alert">
+        <strong>To get a quote, fix the following:</strong>
+        <ul>
+          @for (p of problems(); track p) {
+            <li>{{ p }}</li>
+          }
+        </ul>
+      </div>
+    }
+
+    <div class="actions">
+      <button type="submit" class="primary" [disabled]="form.invalid">Get quote</button>
+      <button type="button" class="secondary" (click)="saveDraft()">Save draft</button>
+      <button type="button" class="secondary" (click)="clearDraft()">Clear draft</button>
+    </div>
+    @if (draftMessage()) {
+      <p class="note" role="status">{{ draftMessage() }}</p>
+    }
+  </form>
+
+  <section class="panel" aria-live="polite">
+    <h2>Quote</h2>
+
+    @if (quoteState(); as s) {
+      @if (s.status === 'idle') {
+        <p class="empty">No quote yet. Fill in the trip details and press “Get quote”.</p>
+      }
+
+      @if (s.status === 'pending') {
+        <p class="loading"><span class="spinner"></span> Calculating your quote…</p>
+        @if (s.tripKey !== currentKey()) {
+          <p class="warn">You changed the trip while this was calculating. Its result will be marked outdated.</p>
+        }
+      }
+
+      @if (s.status === 'invalid') {
+        <div class="problems">
+          <strong>No quote was created:</strong>
+          <ul>
+            @for (e of s.errors; track e) {
+              <li>{{ e }}</li>
+            }
+          </ul>
+        </div>
+      }
+
+      @if (s.status === 'success') {
+        @if (s.tripKey === currentKey()) {
+          <table class="result">
+            <tr><th>Distance</th><td>{{ s.quote.distanceKm }} km</td></tr>
+            <tr><th>Fare per truck</th><td>BDT {{ s.quote.farePerTruck | number }}</td></tr>
+            <tr><th>Transportation subtotal</th><td>BDT {{ s.quote.transportCost | number }}</td></tr>
+            <tr><th>Optional services subtotal</th><td>BDT {{ s.quote.serviceCost | number }}</td></tr>
+            <tr class="total"><th>Grand total</th><td>BDT {{ s.quote.totalQuote | number }}</td></tr>
+          </table>
+        } @else {
+          <p class="warn">
+            The trip details changed after this quote was calculated, so the price is hidden.
+            Press “Get quote” to calculate it again.
+          </p>
+        }
+      }
+    }
+  </section>
+</main>
